@@ -6,6 +6,8 @@ Shader "Custom/Sprite Outline"
 		_Color ("Tint", Color) = (1,1,1,1)
 		_GlowColor ("Glow Tint", Color) = (1,1,1,1)
 		_Spread ("Spread", Range(0, 0.1)) = 0.01
+		_Blur ("Blur", Range(0, 5)) = 4
+		[Toggle(USE_DIAGONAL_BLUR)] _UseDiagonalBlur ("Use Diagonal Blur (2x Slower)", Float) = 0
 	}
 
 	SubShader
@@ -30,6 +32,7 @@ Shader "Custom/Sprite Outline"
 		CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile __ USE_DIAGONAL_BLUR
 
 			#include "UnityCG.cginc"
 
@@ -47,6 +50,7 @@ Shader "Custom/Sprite Outline"
 			
 			fixed4 _GlowColor;
 			fixed _Spread;
+			fixed _Blur;
 
 			v2f vert(appdata_t IN)
 			{
@@ -65,7 +69,7 @@ Shader "Custom/Sprite Outline"
 
 			fixed4 frag(v2f IN) : SV_Target
 			{
-				#define BLURV(weight, v, x, y) tex2D(_MainTex, IN.texcoord + half2(x * v, y * v)).a * weight
+				#define BLURV(weight, v, x, y) tex2Dlod(_MainTex, fixed4(IN.texcoord + half2(x * v, y * v), 0, _Blur)).a * weight
 
 				#define BLUR(x, y) \
 					sum += BLURV(0.05, -4.0, x, y); \
@@ -80,8 +84,10 @@ Shader "Custom/Sprite Outline"
 
                 half sum = 0;
 
+                #ifdef USE_DIAGONAL_BLUR
                 BLUR(_Spread * 0.75, _Spread * 0.75)
                 BLUR(_Spread * 0.75, -_Spread * 0.75)
+                #endif
                 BLUR(_Spread, 0)
                 BLUR(0, _Spread)
 
