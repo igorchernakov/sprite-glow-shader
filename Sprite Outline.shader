@@ -1,4 +1,4 @@
-﻿Shader "Custom/Sprite Outline"
+Shader "Custom/Sprite Outline"
 {
 	Properties
 	{
@@ -65,30 +65,25 @@
 
 			fixed4 frag(v2f IN) : SV_Target
 			{
-				#define BLURX(weight, x) tex2D(_MainTex, IN.texcoord + half2(x * _Spread, 0)).a * weight
-				#define BLURY(weight, y) tex2D(_MainTex, IN.texcoord + half2(0, y * _Spread)).a * weight
+				#define BLURV(weight, v, x, y) tex2D(_MainTex, IN.texcoord + half2(x * v, y * v)).a * weight
+
+				#define BLUR(x, y) \
+					sum += BLURV(0.05, -4.0, x, y); \
+					sum += BLURV(0.09, -3.0, x, y); \
+					sum += BLURV(0.12, -2.0, x, y); \
+					sum += BLURV(0.15, -1.0, x, y); \
+					sum += BLURV(0.18,  0.0, x, y); \
+					sum += BLURV(0.15, +1.0, x, y); \
+					sum += BLURV(0.12, +2.0, x, y); \
+					sum += BLURV(0.09, +3.0, x, y); \
+					sum += BLURV(0.05, +4.0, x, y);
 
                 half sum = 0;
 
-				sum += BLURX(0.05, -4.0);
-				sum += BLURX(0.09, -3.0);
-				sum += BLURX(0.12, -2.0);
-				sum += BLURX(0.15, -1.0);
-				sum += BLURX(0.18,  0.0);
-				sum += BLURX(0.15, +1.0);
-				sum += BLURX(0.12, +2.0);
-				sum += BLURX(0.09, +3.0);
-				sum += BLURX(0.05, +4.0);
-
-				sum += BLURY(0.05, -4.0);
-				sum += BLURY(0.09, -3.0);
-				sum += BLURY(0.12, -2.0);
-				sum += BLURY(0.15, -1.0);
-				sum += BLURY(0.18,  0.0);
-				sum += BLURY(0.15, +1.0);
-				sum += BLURY(0.12, +2.0);
-				sum += BLURY(0.09, +3.0);
-				sum += BLURY(0.05, +4.0);
+                BLUR(_Spread * 0.75, _Spread * 0.75)
+                BLUR(_Spread * 0.75, -_Spread * 0.75)
+                BLUR(_Spread, 0)
+                BLUR(0, _Spread)
 
 				return half4(_GlowColor.rgb, sum * _GlowColor.a);
 			}
